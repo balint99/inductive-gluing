@@ -19,12 +19,21 @@ data 𝟘 : Set where
 exfalso : 𝟘 → A
 exfalso ()
 
+infixl 4 _⸴_
+
 record Σ̂ (A : Set i)(B : A → Set j) : Set (i ⊔ j) where
   constructor _⸴_
   field
     proj₁ : A
     proj₂ : B proj₁
 open Σ̂ public
+
+infixl 5 _×̂_
+
+_×̂_ : Set i → Set j → Set (i ⊔ j)
+A ×̂ B = Σ̂ A (λ _ → B)
+
+infixl 4 _⊎_
 
 data _⊎_ (A : Set i)(B : Set j) : Set (i ⊔ j) where
   inj₁ : A → A ⊎ B
@@ -52,6 +61,7 @@ data ℕ : Set where
   suc : ℕ → ℕ
 {-# BUILTIN NATURAL ℕ #-}
 
+infix 1 _≡_
 data _≡_ {A : Set i}(x : A) : A → Set i where
   rfl : x ≡ x
 {-# BUILTIN EQUALITY _≡_ #-}

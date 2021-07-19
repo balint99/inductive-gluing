@@ -1,0 +1,23 @@
+Conₚ : (i : ℕ) → Con i → Set
+Conₚ i Γ = Ty i Γ
+         = Γ → Set i
+
+Tyₚ : (j : ℕ) →  Conₚ i Γ → Ty j Γ → Set
+Tyₚ j Γₚ A = Ty j (Γ ▷ Γₚ ▷ A[p])
+           ≅ (γ : Γ) → Γₚ γ → A γ → Set j
+
+Subₚ : Conₚ i Γ → Conₚ j Δ → Sub Γ Δ → Set
+Subₚ Γₚ Δₚ σ = Tm (Γ ▷ Γₚ) (Δₚ[σ ∘ p])
+             ≅ (γ : Γ) → Γₚ γ → Δₚ (σ γ)
+
+Tmₚ : (Γₚ : Conₚ i Γ) → Tyₚ j Γₚ A → Tm Γ A → Set
+Tmₚ Γₚ Aₚ t = Tm (Γ ▷ Γₚ) (Aₚ[id, t[p]])
+       	    ≅ (γ : Γ)(γₚ : Γₚ γ) → Aₚ γ γₚ (t γ)
+
+idₚ : Subₚ Γₚ Γₚ id
+id = q
+   ≅ λ γ γₚ → γₚ
+
+_∘ₚ_ : Subₚ Δₚ Θₚ σ → Subₚ Γₚ Δₚ δ → Subₚ Γₚ Θₚ (σ ∘ δ)
+σₚ ∘ₚ δₚ = σₚ[δ ∘ p, δₚ]
+      	 ≅ λ γ γₚ → σₚ (δ γ) (δₚ γ γₚ)

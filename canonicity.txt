@@ -657,7 +657,7 @@ indₚ {Aₚ = Aₚ} Cₚ uₚ vₚ nₚ tₚ = λ {ν} γₚ →
 	  (nₚ γₚ) (tₚ γₚ)
 
 ------------------------------------
--- W
+-- IW
 ------------------------------------
 
 data W (I : Set a)(S : I → Set b)(P : (i : I) → S i → I → Set c) : I → Set (a ⊔ b ⊔ c) where
@@ -682,7 +682,7 @@ ind : ∀ {Γ I S P}(C : Ty d (Γ ▷ I ▷ W I S P))
             ▷ Π (I[p³]) (Π (P[p⁺]) (C[p⁵, 1, 2 $ 1 $ 0]))) (C[p³, sup 3 2 1])
     → (i : Tm Γ I)(w : Tm Γ (W I S P[id, i])) → Tm Γ (C[id, i, w])
 (ind C v i w)[σ] = ind (C[σ⁺⁺]) (v[σ⁺⁺⁺⁺]) (i[σ]) (w[σ])
-ind C v .i (sup i s f) = v[id, i, s, f, lam (lam (ind (C[(p²)⁺⁺]) (v[p²]) 1 (f[p²] $ 1 $ 0)))]
+ind C v .i (sup i s f) = v[id, i, s, f, lam (lam (ind (C[(p²)⁺⁺]) (v[(p²)⁺⁺⁺⁺]) 1 (f[p²] $ 1 $ 0)))]
 
 data PW {a b c}{I : Ty a ∙}{S : Ty b (∙ ▷ I)}{P : Ty c (∙ ▷ I ▷ S ▷ I[p²])}
      	(Iₚ : Tm ∙ I → Set a)(Sₚ : ∀ {i} → Iₚ i → Tm ∙ (S[id, i]) → Set b)
@@ -770,7 +770,12 @@ indₚ : ∀ {Γ I S P C v i w}{Γₚ : Sub ∙ Γ → Set x}
      → (wₚ : ∀ {ν}(γₚ : Γₚ ν) → PW (Iₚ γₚ) (λ iₚ → Sₚ (γₚ, iₚ))
                                    (λ iₚ sₚ jₚ → Pₚ (γₚ, iₚ, sₚ, jₚ)) (iₚ γₚ) (w[ν]))
      → (∀ {ν}(γₚ : Γₚ ν) → Cₚ (γₚ, iₚ γₚ, wₚ γₚ) (ind (C[ν⁺⁺]) (v[ν⁺⁺⁺⁺]) (i[ν]) (w[ν])))
-indₚ Cₚ vₚ iₚ wₚ = λ γₚ → ?
+indₚ {C = C}{v} Cₚ vₚ iₚ wₚ = λ {ν} γₚ →
+  indPW {I[ν]}{S[ν⁺]}{P[ν⁺⁺⁺]}{Iₚ γₚ}{λ iₚ → Sₚ (γₚ, iₚ)}{λ iₚ sₚ jₚ → Pₚ (γₚ, iₚ, sₚ, jₚ)}
+        (λ {i}{w} iₚ wₚ → Cₚ (γₚ, iₚ, wₚ) (ind (C[ν⁺⁺]) (v[ν⁺⁺⁺⁺]) i w))
+	(λ iₚ sₚ {fₚ} cₚ → vₚ (γₚ, iₚ, sₚ, λ {j} jₚ {p} pₚ → fₚ {j}{p} jₚ pₚ,
+	                                   λ {j} jₚ {p} pₚ → cₚ {j}{p} jₚ pₚ))
+	(iₚ γₚ) (wₚ γₚ)
 
 I  : Ty a ∙
 Iₚ : Tyₚ a ∙ₚ I
@@ -794,3 +799,122 @@ Pₚ : Tyₚ c (∙ₚ ▷ₚ Iₚ ▷ Sₚ ▷ Iₚ[pₚ²]ₚ) P
      → Tm ∙ (P[id, i, s, j]) → Set c
    ≅ ∀ (i : Tm ∙ I)(s : Tm ∙ (S[id, i]))(j : Tm ∙ I)
      → (iₚ : Iₚ i) → Sₚ i iₚ s → Iₚ j → Tm ∙ (P[id, i, s, j]) → Set c
+
+------------------------------------
+-- W
+------------------------------------
+
+W : ∀ {Γ} → (S : Ty a Γ) → Ty b (Γ ▷ S) → Ty (a ⊔ b) Γ
+(W S P)[σ] = W (S[σ]) (P[σ⁺])
+sup : ∀ {Γ S P}(s : Tm Γ S) → Tm Γ (P[id, s] ⇒ W S P) → Tm Γ (W S P)
+(sup s f)[σ] = sup (s[σ]) (f[σ])
+elim : ∀ {Γ S P}(Q : Ty c (Γ ▷ W S P))
+     → Tm (Γ ▷ S ▷ P ⇒ W S P[p] ▷ Π (P[p]) (Q[p³, 1 $ 0])) (Q[p³, sup 2 1])
+     → (w : Tm Γ (W S P)) → Tm Γ (Q[id, w])
+(elim Q v w)[σ] = elim (Q[σ⁺]) (v[σ⁺⁺⁺]) (w[σ])
+elim Q v (sup s f) = v[id, s, f, lam (elim (Q[p⁺]) (v[p⁺⁺⁺]) (f[p] $ 0))]
+
+{-
+data PW {a b}{S : Ty a ∙}{P : Ty b (∙ ▷ S)}
+        (Sₚ : Tm ∙ S → Set a)(Pₚ : ∀ {s} → Sₚ s → Tm ∙ (P[id, s]) → Set b)
+	: Tm ∙ (W S P) → Set (a ⊔ b) where
+  Psup : ∀ {s f}(sₚ : Sₚ s)
+       → (∀ {p} → Pₚ sₚ p → PW Sₚ Pₚ (f $ p))
+       → PW Sₚ Pₚ (sup s f)
+
+indPW : ∀ {a b c}{S : Ty a ∙}{P : Ty b (∙ ▷ S)}
+        {Sₚ : Tm ∙ S → Set a}{Pₚ : ∀ {s} → Sₚ s → Tm ∙ (P[id, s]) → Set b}
+	(Qₚ : ∀ {w} → PW Sₚ Pₚ w → Set c)
+      → (∀ {s f}(sₚ : Sₚ s){fₚ : ∀ {p} → Pₚ sₚ p → PW Sₚ Pₚ (f $ p)}
+         → (∀ {p}(pₚ : Pₚ sₚ p) → Qₚ (fₚ pₚ))
+	 → Qₚ (Psup sₚ fₚ))
+      → ∀ {w}(wₚ : PW Sₚ Pₚ w) → Qₚ wₚ
+indPW Qₚ vₚ (Psup sₚ fₚ) = vₚ sₚ (λ pₚ → indPW Qₚ vₚ (fₚ pₚ))
+-}
+
+data IW {a b c}(I : Set a)(S : I → Set b)(P : (i : I) → S i → I → Set c)
+     : I → Set (a ⊔ b ⊔ c) where
+  isup : (i : I)(s : S i) → ((j : I) → P i s j → IW I S P j) → IW I S P i
+
+indIW : ∀ {a b c d}(Q : (i : I) → IW I S P i → Set d)
+      → ((i : I)(s : S i)(f : (j : I) → P i s j → IW I S P j)
+        → ((j : I)(p : P i s j) → Q j (f j p))
+	→ Q i (isup i s f))
+      → (i : I)(w : IW I S P i) → Q i w
+indIW Q v .i (isup i s f) = v i s f (λ j p → indIW Q v j (f j p))
+
+PW : ∀ {a b}{S : Ty a ∙}{P : Ty b (∙ ▷ S)}
+     (Sₚ : Tm ∙ S → Set a)(Pₚ : ∀ {s} → Sₚ s → Tm ∙ (P[id, s]) → Set b)
+   → Tm ∙ (W S P) → Set (a ⊔ b)
+PW {S = S}{P} Sₚ Pₚ = IW (Tm ∙ (W S P))
+                         (λ w → Σ̂ (Tm ∙ S) (λ s →
+			        Σ̂ (Tm ∙ (P[id, s] ⇒ W S P)) (λ f →
+				w ≡ sup s f ×̂ Sₚ s)))
+                         (λ w sfp w' → Σ̂ (Tm ∙ (P[id, p₁ sfp])) (λ p →
+			               w' ≡ p₁ (p₂ sfp) $ p ×̂ Pₚ (p₂ (p₂ (p₂ sfp))) p))
+
+Psup : ∀ {a b}{S : Ty a ∙}{P : Ty b (∙ ▷ S)}
+       {Sₚ : Tm ∙ S → Set a}{Pₚ : ∀ {s} → Sₚ s → Tm ∙ (P[id, s]) → Set b}
+     → ∀ {s f}(sₚ : Sₚ s)
+     → (∀ {p} → Pₚ sₚ p → PW Sₚ Pₚ (f $ p))
+     → PW Sₚ Pₚ (sup s f)
+Psup {Sₚ = Sₚ}{Pₚ}{s}{f} sₚ fₚ =
+ isup (sup s f)
+      (s ⸴ (f ⸴ (rfl ⸴ sₚ)))
+      (λ w pp → transport (PW Sₚ Pₚ) (p₁ (p₂ pp) ⁻¹) (fₚ (p₂ (p₂ pp))))
+
+indPW : ∀ {a b c}{S : Ty a ∙}{P : Ty b (∙ ▷ S)}
+        {Sₚ : Tm ∙ S → Set a}{Pₚ : ∀ {s} → Sₚ s → Tm ∙ (P[id, s]) → Set b}
+	(Qₚ : ∀ {w} → PW Sₚ Pₚ w → Set c)
+      → (∀ {s f}(sₚ : Sₚ s){fₚ : ∀ {p} → Pₚ sₚ p → PW Sₚ Pₚ (f $ p)}
+         → (∀ {p}(pₚ : Pₚ sₚ p) → Qₚ (fₚ pₚ))
+	 → Qₚ (Psup sₚ fₚ))
+      → ∀ {w}(wₚ : PW Sₚ Pₚ w) → Qₚ wₚ
+indPW Qₚ vₚ {w} wₚ =
+  indIW (λ w wₚ → Qₚ wₚ)
+        (λ w sfp fₚ q → vₚ {p₁ sfp}{p₁ (p₂ sfp)}
+	                   (p₂ (p₂ (p₂ sfp))))
+			   {λ {p} pₚ → fₚ (p₁ (p₂ sfp) $ p) (p ⸴ (rfl ⸴ pₚ))}
+			   (λ {p} pₚ → q (p₁ (p₂ sfp) $ p) (p ⸴ (rfl ⸴ pₚ)))
+			   : Qₚ {sup (p₁ sfp) (p₁ (p₂ sfp))}
+			        (Psup (p₂ (p₂ (p₂ sfp)))
+				      (λ {p} pₚ → fₚ (p₁ (p₂ sfp) $ p) (p ⸴ (rfl ⸴ pₚ))))
+	               ^ : Qₚ {w} (isup w sfp fₚ)
+	w wₚ
+
+Wₚ : ∀ {Γ S P}{Γₚ : Sub ∙ Γ → Set x}
+   → (Sₚ : ∀ {ν} → Γₚ ν → Tm ∙ (S[ν]) → Set a)
+   → (∀ {ν} → Σ (Γₚ (p ∘ ν)) (λ γₚ → Sₚ γₚ (q[ν])) → Tm ∙ (P[ν]) → Set b)
+   → (∀ {ν} → Γₚ ν → Tm ∙ (W S P[ν]) → Set (a ⊔ b))
+Wₚ Sₚ Pₚ = λ γₚ → PW (Sₚ γₚ) (λ sₚ → Pₚ (γₚ, sₚ))
+
+supₚ : ∀ {Γ S P s f}{Γₚ : Sub ∙ Γ → Set x}
+       {Sₚ : ∀ {ν} → Γₚ ν → Tm ∙ (S[ν]) → Set a}
+       {Pₚ : ∀ {ν} → Σ (Γₚ (p ∘ ν)) (λ γₚ → Sₚ γₚ (q[ν])) → Tm ∙ (P[ν]) → Set b}
+     → (sₚ : ∀ {ν}(γₚ : Γₚ ν) → Sₚ γₚ (s[ν]))
+     → (∀ {ν}(γₚ : Γₚ ν)
+        → ∀ {p} → Pₚ (γₚ, sₚ γₚ) p
+	→ PW (Sₚ γₚ) (λ sₚ → Pₚ (γₚ, sₚ)) (f[ν] $ p))
+     → (∀ {ν}(γₚ : Γₚ ν) → PW (Sₚ γₚ) (λ sₚ → Pₚ (γₚ, sₚ)) (sup (s[ν]) (f[ν])))
+supₚ sₚ fₚ = λ γₚ → Psup (sₚ γₚ) (fₚ γₚ)
+
+elimₚ : ∀ {Γ S P Q v w}{Γₚ : Sub ∙ Γ → Set x}
+      	{Sₚ : ∀ {ν} → Γₚ ν → Tm ∙ (S[ν]) → Set b}
+	{Pₚ : ∀ {ν} → Σ (Γₚ (p ∘ ν)) (λ γₚ → Sₚ γₚ (q[ν])) → Tm ∙ (P[ν]) → Set b}
+	(Qₚ : ∀ {ν} → Σ (Γₚ (p ∘ ν))
+	                (λ γₚ → PW (Sₚ γₚ) (λ sₚ → Pₚ (γₚ, sₚ)) (q[ν]))
+	            → Tm ∙ (Q[ν]) → Set c)
+      → (∀ {ν}(γsfqₚ : Σ (Σ (Σ
+           (Γₚ (p³ ∘ ν))
+	   (λ γₚ → Sₚ γₚ (q[p² ∘ ν])))
+	   (λ γsₚ → ∀ {p} → Pₚ γsₚ p
+	          → PW (Sₚ (p₁ γsₚ)) (λ sₚ → Pₚ (p₁ γsₚ, sₚ)) (q[p ∘ ν] $ p)))
+           (λ γsfₚ → ∀ {p}(pₚ : Pₚ (p₁ γsfₚ) p)
+	      	   → Qₚ (p₁ (p₁ γsfₚ), p₂ γsfₚ pₚ) (q[ν] $ p)))
+         → Qₚ (p₁ (p₁ (p₁ γsfqₚ)), Psup (p₂ (p₁ (p₁ γsfqₚ))) (p₂ (p₁ γsfqₚ))) (v[ν]))
+      → (wₚ : ∀ {ν}(γₚ : Γₚ ν) → PW (Sₚ γₚ) (λ sₚ → Pₚ (γₚ, sₚ)) (w[ν]))
+      → (∀ {ν}(γₚ : Γₚ ν) → Qₚ (γₚ, wₚ γₚ) (elim (Q[ν⁺]) (v[ν⁺⁺⁺]) (w[ν])))
+elimₚ Qₚ vₚ wₚ = λ {ν} γₚ →
+  indPW (λ {w} wₚ → Qₚ (γₚ, wₚ) (elim (Q[ν⁺]) (v[ν⁺⁺⁺]) w))
+        (λ sₚ {fₚ} qₚ → vₚ (γₚ, sₚ, fₚ, qₚ))
+	(wₚ γₚ)
