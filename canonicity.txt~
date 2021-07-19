@@ -1,0 +1,440 @@
+
+----------------------------------------------
+-- Bool
+----------------------------------------------
+
+-- STT, non-dependent eliminator
+
+data PBool : Tm ∙ Bool → Set where
+  Ptrue :  PBool true
+  Pfalse : PBool false
+
+indPBool : ∀ {i} (P : ∀ {t} → PBool t → Set i)
+         → P Ptrue → P Pfalse
+         → ∀ {t}(tₚ : PBool t) → P tₚ
+indPBool P uₚ vₚ Ptrue  = uₚ
+indPBool P uₚ vₚ Pfalse = vₚ
+
+recPBool : ∀ {i} (A : Tm ∙ Bool → Set i)
+         → A true → A false
+         → ∀ {t} → PBool t → A t
+recPBool A uₚ vₚ tₚ = indPBool (λ {t} _ → A t) uₚ vₚ tₚ
+
+Bool-Prec : ∀ {i A} (Aₚ : Tm ∙ A → Set i)
+            {t : Tm ∙ Bool}{u v : Tm ∙ A}
+          → PBool t → Aₚ u → Aₚ v → Aₚ (if t u v)
+Bool-Prec Aₚ {t}{u}{v} tₚ uₚ vₚ = recPBool (λ t → Aₚ (if t u v)) uₚ vₚ tₚ
+
+if : ∀ {Γ A} → Tm Γ Bool → Tm Γ A → Tm Γ A → Tm Γ A
+if true  u v = u
+if false u v = v
+(if t u v)[σ] = if (t[σ]) (u[σ]) (v[σ])
+
+ifₚ : ∀ {Γ A t u v}{Γₚ : Sub ∙ Γ → Set}{Aₚ : Tm ∙ A → Set}
+    → (∀ {ν} → Γₚ ν → PBool (t[ν]))
+    → (∀ {ν} → Γₚ ν → Aₚ (u[ν]))
+    → (∀ {ν} → Γₚ ν → Aₚ (v[ν]))
+    → ∀ {ν} → Γₚ ν → Aₚ (if (t[ν]) (u[ν]) (v[ν]))
+ifₚ = λ { {Aₚ = Aₚ} tₚ uₚ vₚ γₚ → Bool-Prec Aₚ (tₚ γₚ) (uₚ γₚ) (vₚ γₚ) }
+
+-- DTT, non-dependent eliminator
+
+data PBool : Tm ∙ Bool → Set where
+  Ptrue :  PBool true
+  Pfalse : PBool false
+
+indPBool : ∀ {i} (P : ∀ {t} → PBool t → Set i)
+         → P Ptrue → P Pfalse
+         → ∀ {t}(tₚ : PBool t) → P tₚ
+indPBool P uₚ vₚ Ptrue  = uₚ
+indPBool P uₚ vₚ Pfalse = vₚ
+
+recPBool : ∀ {i} (A : Tm ∙ Bool → Set i)
+         → A true → A false
+         → ∀ {t} → PBool t → A t
+recPBool A uₚ vₚ tₚ = indPBool (λ {t} _ → A t) uₚ vₚ tₚ
+
+Bool-Prec : ∀ {i A} (Aₚ : Tm ∙ A → Set i)
+            {t : Tm ∙ Bool}{u v : Tm ∙ A}
+          → PBool t → Aₚ u → Aₚ v → Aₚ (if t u v)
+Bool-Prec Aₚ {t}{u}{v} tₚ uₚ vₚ = recPBool (λ t → Aₚ (if t u v)) uₚ vₚ tₚ
+
+if : ∀ {Γ A} → Tm Γ Bool → Tm Γ A → Tm Γ A → Tm Γ A
+if true  u v = u
+if false u v = v
+(if t u v)[σ] = if (t[σ]) (u[σ]) (v[σ])
+
+Boolₚ : ∀ {ν} → Γₚ ν → Tm ∙ Bool → Set
+Boolₚ = λ _ → PBool
+
+ifₚ : ∀ {i Γ A t u v}{Γₚ : Sub ∙ Γ → Set}{Aₚ : ∀ {ν} → Γₚ ν → Tm ∙ (A[ν]) → Set i}
+    → (∀ {ν}(γₚ : Γₚ ν) → PBool (t[ν]))
+    → (∀ {ν}(γₚ : Γₚ ν) → Aₚ γₚ (u[ν]))
+    → (∀ {ν}(γₚ : Γₚ ν) → Aₚ γₚ (v[ν]))
+    → ∀ {ν}(γₚ : Γₚ ν) → Aₚ γₚ (if (t[ν]) (u[ν]) (v[ν]))
+ifₚ = λ { {Aₚ = Aₚ} tₚ uₚ vₚ γₚ → Bool-Prec (Aₚ γₚ) (tₚ γₚ) (uₚ γₚ) (vₚ γₚ) }
+
+-- DTT, dependent eliminator
+
+data PBool : Tm ∙ Bool → Set where
+  Ptrue :  PBool true
+  Pfalse : PBool false
+
+indPBool : ∀ {i} (P : ∀ {t} → PBool t → Set i)
+         → P Ptrue → P Pfalse
+         → ∀ {t}(tₚ : PBool t) → P tₚ
+indPBool P uₚ vₚ Ptrue  = uₚ
+indPBool P uₚ vₚ Pfalse = vₚ
+
+Bool-Prec : ∀ {i}{C : Ty (∙ ▷ Bool)}(Cₚ : ∀ {t} → PBool t → Tm ∙ (C[id, t]) → Set i)
+            {t : Tm ∙ Bool}{u : Tm ∙ (C[id, true])}{v : Tm ∙ (C[id, false])}
+          → (tₚ : PBool t)
+          → Cₚ Ptrue u
+          → Cₚ Pfalse v
+          → Cₚ tₚ (if C t u v)
+Bool-Prec Cₚ {t}{u}{v} tₚ uₚ vₚ = indPBool (λ {t} tₚ → Cₚ tₚ (if C t u v)) uₚ vₚ tₚ
+
+if : ∀ {Γ}(C : Ty (Γ ▷ Bool)}
+   → (t : Tm Γ Bool)
+   → Tm Γ (C[id, true])
+   → Tm Γ (C[id, false])
+   → Tm Γ (C[id, t])
+if true  u v = u
+if false u v = v
+(if C t u v)[σ] = if (C[σ⁺]) (t[σ]) (u[σ]) (v[σ])
+
+Boolₚ : ∀ {ν} → Γₚ ν → Tm ∙ Bool → Set
+Boolₚ = λ _ → PBool
+
+ifₚ : ∀ {i Γ C t u v}{Γₚ : Sub ∙ Γ → Set}{Cₚ : ∀ {ν} → Σ (Γₚ (p ∘ ν)) (λ γₚ → PBool (q[ν])) → Tm ∙ (C[ν]) → Set i}
+    → (tₚ : ∀ {ν}(γₚ : Γₚ ν) → PBool (t[ν]))
+    → (∀ {ν}(γₚ : Γₚ ν) → Cₚ (γₚ, Ptrue) (u[ν]))
+    → (∀ {ν}(γₚ : Γₚ ν) → Cₚ (γₚ, Pfalse) (v[ν]))
+    → ∀ {ν}(γₚ : Γₚ ν) → Cₚ (γₚ, tₚ γₚ) (if (C[ν⁺]) (t[ν]) (u[ν]) (v[ν]))
+ifₚ = λ { {Cₚ = Cₚ} tₚ uₚ vₚ {ν} γₚ → Bool-Prec {C = C[ν⁺]} (λ {t} tₚ → Cₚ {ν, t} (γₚ, tₚ)) (tₚ γₚ) (uₚ γₚ) (vₚ γₚ) }
+
+----------------------------------------------
+-- +
+----------------------------------------------
+
+-- STT, non-dependent eliminator
+
+data _P+_ {i j A B}(Aₚ : Tm ∙ A → Set i)(Bₚ : Tm ∙ B → Set j)
+     : Tm ∙ (A + B) → Set (i ⊔ j) where
+  Pinl : ∀ {u} → Aₚ u → (Aₚ P+ Bₚ) (inl u)
+  Pinr : ∀ {v} → Bₚ v → (Aₚ P+ Bₚ) (inr v)
+
+indP+ : ∀ {i j k A B}{Aₚ : Tm ∙ A → Set i}{Bₚ : Tm ∙ B → Set j}
+        (P : ∀ {t} → (Aₚ P+ Bₚ) t → Set k)
+      → (∀ {u}(uₚ : Aₚ u) → P (Pinl uₚ))
+      → (∀ {v}(vₚ : Bₚ v) → P (Pinr vₚ))
+      → ∀ {t}(tₚ : (Aₚ P+ Bₚ) t) → P tₚ
+indP+ P f g (Pinl uₚ) = f uₚ
+indP+ P f g (Pinr vₚ) = g vₚ
+
+recP+ : ∀ {i j k A B}{Aₚ : Tm ∙ A → Set i}{Bₚ : Tm ∙ B → Set j}
+      	(C : Tm ∙ (A + B) → Set i)
+      → (∀ {u} → Aₚ u → C (inl u))
+      → (∀ {v} → Bₚ v → C (inr v))
+      → ∀ {t} → (Aₚ P+ Bₚ) t → C t
+recP+ A uₚ vₚ tₚ = indP+ (λ {t} _ → C t) uₚ vₚ tₚ
+
++-Prec : ∀ {i j k A B C}
+         {Aₚ : Tm ∙ A → Set i}{Bₚ : Tm ∙ B → Set j}(Cₚ : Tm ∙ C → Set i)
+         {u : Tm (∙ ▷ A) C}{v : Tm (∙ ▷ B) C}{t : Tm ∙ (A + B)}
+       → (∀ {a} → Aₚ a → Cₚ (u[id, a]))
+       → (∀ {b} → Bₚ b → Cₚ (v[id, b]))
+       → (Aₚ P+ Bₚ) t → Cₚ (case u v t)
++-Prec Cₚ {u}{v} f g tₚ = recP+ (λ t → Cₚ (case u v t)) f g tₚ
+
+case : ∀ {Γ A B C} → Tm (Γ ▷ A) C → Tm (Γ ▷ B) C → Tm Γ (A + B) → Tm Γ C
+case u v (inl a) = u[id, a]
+case u v (inr b) = v[id, b]
+(case u v t)[σ] = case (u[σ⁺]) (v[σ⁺]) (t[σ])
+
+_+ₚ_ : ∀ {A B} → (Tm ∙ A → Set) → (Tm ∙ B → Set) → Tm ∙ (A + B) → Set
+Aₚ +ₚ Bₚ = Aₚ P+ Bₚ
+
+caseₚ : ∀ {Γ A B C}{Γₚ : Sub ∙ Γ → Set}
+      	{Aₚ : Tm ∙ A → Set}{Bₚ : Tm ∙ B → Set}{Cₚ : Tm ∙ C → Set}
+	{u : Tm (Γ ▷ A) C}{v : Tm (Γ ▷ B) C}{t : Tm Γ (A + B)}
+      → (∀ {ν} → Γₚ (p ∘ ν) × Aₚ (q[ν]) → Cₚ (u[ν]))
+      → (∀ {ν} → Γₚ (p ∘ ν) × Bₚ (q[ν]) → Cₚ (v[ν]))
+      → (∀ {ν} → Γₚ ν → (Aₚ P+ Bₚ) (t[ν]))
+      → ∀ {ν} → Γₚ ν → Cₚ (case (u[ν⁺]) (v[ν⁺]) (t[ν]))
+caseₚ {Cₚ = Cₚ} uₚ vₚ tₚ γₚ = +-Prec Cₚ (λ aₚ → uₚ (γₚ, aₚ)) (λ bₚ → vₚ (γₚ, bₚ)) (tₚ γₚ)
+
+-- DTT, non-dependent eliminator
+
+data _P+_ {i j A B}(Aₚ : Tm ∙ A → Set i)(Bₚ : Tm ∙ B → Set j)
+     : Tm ∙ (A + B) → Set (i ⊔ j) where
+  Pinl : ∀ {u} → Aₚ u → (Aₚ P+ Bₚ) (inl u)
+  Pinr : ∀ {v} → Bₚ v → (Aₚ P+ Bₚ) (inr v)
+
+indP+ : ∀ {i j k A B}{Aₚ : Tm ∙ A → Set i}{Bₚ : Tm ∙ B → Set j}
+        (P : ∀ {t} → (Aₚ P+ Bₚ) t → Set k)
+      → (∀ {u}(uₚ : Aₚ u) → P (Pinl uₚ))
+      → (∀ {v}(vₚ : Bₚ v) → P (Pinr vₚ))
+      → ∀ {t}(tₚ : (Aₚ P+ Bₚ) t) → P tₚ
+indP+ P f g (Pinl uₚ) = f uₚ
+indP+ P f g (Pinr vₚ) = g vₚ
+
+recP+ : ∀ {i j k A B}{Aₚ : Tm ∙ A → Set i}{Bₚ : Tm ∙ B → Set j}
+      	(C : Tm ∙ (A + B) → Set i)
+      → (∀ {u} → Aₚ u → C (inl u))
+      → (∀ {v} → Bₚ v → C (inr v))
+      → ∀ {t} → (Aₚ P+ Bₚ) t → C t
+recP+ A uₚ vₚ tₚ = indP+ (λ {t} _ → C t) uₚ vₚ tₚ
+
++-Prec : ∀ {i j k A B C}
+         {Aₚ : Tm ∙ A → Set i}{Bₚ : Tm ∙ B → Set j}(Cₚ : Tm ∙ C → Set i)
+         {u : Tm (∙ ▷ A) (C[p])}{v : Tm (∙ ▷ B) (C[p])}{t : Tm ∙ (A + B)}
+       → (∀ {a} → Aₚ a → Cₚ (u[id, a]))
+       → (∀ {b} → Bₚ b → Cₚ (v[id, b]))
+       → (Aₚ P+ Bₚ) t → Cₚ (case u v t)
++-Prec Cₚ {u}{v} f g tₚ = recP+ (λ t → Cₚ (case u v t)) f g tₚ
+
+case : ∀ {Γ A B C} → Tm (Γ ▷ A) (C[p]) → Tm (Γ ▷ B) (C[p]) → Tm Γ (A + B) → Tm Γ C
+case u v (inl a) = u[id, a]
+case u v (inr b) = v[id, b]
+(case u v t)[σ] = case (u[σ⁺]) (v[σ⁺]) (t[σ])
+
+_+ₚ_ : ∀ {A B}
+     → (∀ {ν} → Γₚ ν → Tm ∙ (A[ν]) → Set i)
+     → (∀ {ν} → Γₚ ν → Tm ∙ (B[ν]) → Set j)
+     → ∀ {ν} → Γₚ ν → Tm ∙ (A[ν] + B[ν]) → Set (i ⊔ j)
+Aₚ +ₚ Bₚ = λ γₚ → Aₚ γₚ P+ Bₚ γₚ
+
+caseₚ : ∀ {Γ A B C u v t}{Γₚ : Sub ∙ Γ → Set a}
+      	{Aₚ : ∀ {ν} → Γₚ ν → Tm ∙ (A[ν]) → Set i}
+	{Bₚ : ∀ {ν} → Γₚ ν → Tm ∙ (B[ν]) → Set j}
+	{Cₚ : ∀ {ν} → Γₚ ν → Tm ∙ (C[ν]) → Set k}
+      → (∀ {ν}(γaₚ : Σ (Γₚ (p ∘ ν)) (λ γₚ → Aₚ γₚ (q[ν]))) → Cₚ (proj₁ γaₚ) (u[ν]))
+      → (∀ {ν}(γbₚ : Σ (Γₚ (p ∘ ν)) (λ γₚ → Bₚ γₚ (q[ν]))) → Cₚ (proj₁ γbₚ) (v[ν]))
+      → (∀ {ν}(γₚ : Γₚ ν) → (Aₚ γₚ P+ Bₚ γₚ) (t[ν]))
+      → ∀ {ν}(γₚ : Γₚ ν) → Cₚ γₚ (case (u[ν⁺]) (v[ν⁺]) (t[ν]))
+caseₚ {Cₚ = Cₚ} uₚ vₚ tₚ γₚ = +-Prec (Cₚ γₚ) (λ aₚ → uₚ (γₚ, aₚ)) (λ bₚ → vₚ (γₚ, bₚ)) (tₚ γₚ)
+
+-- DTT, dependent eliminator
+
+data _P+_ {i j A B}(Aₚ : Tm ∙ A → Set i)(Bₚ : Tm ∙ B → Set j)
+     : Tm ∙ (A + B) → Set (i ⊔ j) where
+  Pinl : ∀ {u} → Aₚ u → (Aₚ P+ Bₚ) (inl u)
+  Pinr : ∀ {v} → Bₚ v → (Aₚ P+ Bₚ) (inr v)
+
+indP+ : ∀ {i j k A B}{Aₚ : Tm ∙ A → Set i}{Bₚ : Tm ∙ B → Set j}
+        (P : ∀ {t} → (Aₚ P+ Bₚ) t → Set k)
+      → (∀ {u}(uₚ : Aₚ u) → P (Pinl uₚ))
+      → (∀ {v}(vₚ : Bₚ v) → P (Pinr vₚ))
+      → ∀ {t}(tₚ : (Aₚ P+ Bₚ) t) → P tₚ
+indP+ P f g (Pinl uₚ) = f uₚ
+indP+ P f g (Pinr vₚ) = g vₚ
+
++-Prec : ∀ {i j k A B}{C : Ty (∙ ▷ A + B)}
+         {Aₚ : Tm ∙ A → Set i}{Bₚ : Tm ∙ B → Set j}
+	 (Cₚ : ∀ {t} → (Aₚ P+ Bₚ) t → Tm ∙ (C[id, t]) → Set k)
+         {u : Tm (∙ ▷ A) (C[p, inl 0])}{v : Tm (∙ ▷ B) (C[p, inr 0])}
+	 {t : Tm ∙ (A + B)}
+       → (∀ {a}(aₚ : Aₚ a) → Cₚ (Pinl aₚ) (u[id, a]))
+       → (∀ {b}(bₚ : Bₚ b) → Cₚ (Pinr bₚ) (v[id, b]))
+       → (tₚ : (Aₚ P+ Bₚ) t) → Cₚ tₚ (case C u v t)
++-Prec Cₚ {u}{v} f g tₚ = indP+ (λ {t} tₚ → Cₚ tₚ (case C u v t)) uₚ vₚ tₚ
+
+inl : ∀ {Γ A B} → Tm Γ A → Tm Γ (A + B)
+inr : ∀ {Γ A B} → Tm Γ B → Tm Γ (A + B)
+
+case : ∀ {Γ A B}(C : Ty (Γ ▷ A + B))
+     → Tm (Γ ▷ A) (C[p, inl 0])
+     → Tm (Γ ▷ B) (C[p, inr 0])
+     → (t : Tm Γ (A + B))
+     → Tm Γ (C[id, t])
+case C u v (inl a) = u[id, a]
+case C u v (inr b) = v[id, b]
+(case C u v t)[σ] = case (C[σ⁺]) (u[σ⁺]) (v[σ⁺]) (t[σ])
+
+_+ₚ_ : ∀ {A B}
+     → (∀ {ν} → Γₚ ν → Tm ∙ (A[ν]) → Set i)
+     → (∀ {ν} → Γₚ ν → Tm ∙ (B[ν]) → Set j)
+     → ∀ {ν} → Γₚ ν → Tm ∙ (A[ν] + B[ν]) → Set (i ⊔ j)
+Aₚ +ₚ Bₚ = λ γₚ → Aₚ γₚ P+ Bₚ γₚ
+
+inlₚ : ∀ {Γ A B u}{Γₚ : Sub ∙ Γ → Set a}
+       {Aₚ : ∀ {ν} → Γₚ ν → Tm ∙ (A[ν]) → Set i}
+       {Bₚ : ∀ {ν} → Γₚ ν → Tm ∙ (B[ν]) → Set j}
+     → (∀ {ν}(γₚ : Γₚ ν) → Aₚ γₚ (u[ν]))
+     → ∀ {ν}(γₚ : Γₚ ν) → (Aₚ γₚ P+ Bₚ γₚ) (inl (u[ν]))
+inlₚ uₚ γₚ = Pinl (uₚ γₚ)
+
+inlₚ : ∀ {Γ A B v}{Γₚ : Sub ∙ Γ → Set a}
+       {Aₚ : ∀ {ν} → Γₚ ν → Tm ∙ (A[ν]) → Set i}
+       {Bₚ : ∀ {ν} → Γₚ ν → Tm ∙ (B[ν]) → Set j}
+     → (∀ {ν}(γₚ : Γₚ ν) → Bₚ γₚ (v[ν]))
+     → ∀ {ν}(γₚ : Γₚ ν) → (Aₚ γₚ P+ Bₚ γₚ) (inr (v[ν]))
+inlₚ vₚ γₚ = Pinr (vₚ γₚ)
+
+caseₚ : ∀ {Γ A B C u v t}{Γₚ : Sub ∙ Γ → Set a}
+      	{Aₚ : ∀ {ν} → Γₚ ν → Tm ∙ (A[ν]) → Set i}
+	{Bₚ : ∀ {ν} → Γₚ ν → Tm ∙ (B[ν]) → Set j}
+	{Cₚ : ∀ {ν} → Σ (Γₚ (p ∘ ν)) (λ γₚ → (Aₚ γₚ P+ Bₚ γₚ) (q[ν]))
+	      	    → Tm ∙ (C[ν]) → Set k}
+      → (∀ {ν}(γaₚ : Σ (Γₚ (p ∘ ν)) (λ γₚ → Aₚ γₚ (q[ν])))
+         → Cₚ (proj₁ γaₚ, Pinl (proj₂ γaₚ)) (u[ν]))
+      → (∀ {ν}(γbₚ : Σ (Γₚ (p ∘ ν)) (λ γₚ → Bₚ γₚ (q[ν])))
+         → Cₚ (proj₁ γbₚ, Pinr (proj₂ γbₚ)) (v[ν]))
+      → (tₚ : ∀ {ν}(γₚ : Γₚ ν) → (Aₚ γₚ P+ Bₚ γₚ) (t[ν]))
+      → ∀ {ν}(γₚ : Γₚ ν) → Cₚ (γₚ, tₚ γₚ) (case (C[ν⁺]) (u[ν⁺]) (v[ν⁺]) (t[ν]))
+caseₚ {Cₚ = Cₚ} uₚ vₚ tₚ {ν} γₚ = +-Prec {Aₚ γₚ}{Bₚ γₚ}(λ {t} tₚ → Cₚ {ν, t} (γₚ, tₚ))
+  (λ aₚ → uₚ (γₚ, aₚ)) (λ bₚ → vₚ (γₚ, bₚ)) (tₚ γₚ)
+
+----------------------------------------------
+-- Nat
+----------------------------------------------
+
+-- STT, non-dependent eliminator
+
+data PNat : Tm ∙ Nat → Set where
+  Pzero : PNat zero
+  Psuc  : ∀ {t} → PNat t → PNat (suc t)
+
+indPNat : ∀ {i}(P : ∀ {t} → PNat t → Set i)
+	→ P Pzero
+	→ (∀ {t}{tₚ : PNat t} → P tₚ → P (Psuc tₚ))
+	→ ∀ {t}(tₚ : PNat t) → P tₚ
+indPNat P uₚ vₚ Pzero     = uₚ
+indPNat P uₚ vₚ (Psuc tₚ) = vₚ (indPNat P uₚ vₚ tₚ)
+
+recPNat : ∀ {i}(C : Tm ∙ Nat → Set i)
+	→ C zero
+	→ (∀ {t} → C t → C (suc t))
+	→ ∀ {t} → PNat t → C t
+recPNat C uₚ vₚ tₚ = indPNat (λ {t} _ → C t) uₚ (λ {t} _ → vₚ t) tₚ
+
+Nat-Prec : ∀ {i C}(Cₚ : Tm ∙ C → Set i)
+	   {u : Tm ∙ C}{v : Tm (∙ ▷ C) C}{t : Tm ∙ Nat}
+	 → Cₚ u
+	 → (∀ {c} → Cₚ c → Cₚ (v[id, c]))
+	 → PNat t → Cₚ (rec u v t)
+Nat-Prec Cₚ {u}{v} uₚ vₚ tₚ = recPNat (λ t → Cₚ (rec u v t)) uₚ vₚ tₚ
+
+rec : ∀ {Γ C} → Tm Γ C → Tm (Γ ▷ C) C → Tm Γ Nat → Tm Γ C
+rec u v zero    = u
+rec u v (suc t) = v[id, rec u v t]
+(rec u v t)[σ] = rec (u[σ]) (v[σ⁺]) (t[σ])
+
+recₚ : ∀ {Γ C u v t}{Γₚ : Sub ∙ Γ → Set}{Cₚ : Tm ∙ C → Set}
+     → (∀ {ν} → Γₚ ν → Cₚ (u[ν]))
+     → (∀ {ν} → Γₚ (p ∘ ν) × Cₚ (q[ν]) → Cₚ (v[ν]))
+     → (∀ {ν} → Γₚ ν → PNat (t[ν]))
+     → ∀ {ν} → Γₚ ν → Cₚ (rec (u[ν]) (v[ν⁺]) (t[ν]))
+recₚ {Cₚ = Cₚ} uₚ vₚ tₚ γₚ = Nat-Prec Cₚ (uₚ γₚ) (λ cₚ → vₚ (γₚ, cₚ)) (tₚ γₚ)
+
+-- DTT, non-dependent eliminator
+
+data PNat : Tm ∙ Nat → Set where
+  Pzero : PNat zero
+  Psuc  : ∀ {t} → PNat t → PNat (suc t)
+
+indPNat : ∀ {i}(P : ∀ {t} → PNat t → Set i)
+	→ P Pzero
+	→ (∀ {t}{tₚ : PNat t} → P tₚ → P (Psuc tₚ))
+	→ ∀ {t}(tₚ : PNat t) → P tₚ
+indPNat P uₚ vₚ Pzero     = uₚ
+indPNat P uₚ vₚ (Psuc tₚ) = vₚ (indPNat P uₚ vₚ tₚ)
+
+recPNat : ∀ {i}(C : Tm ∙ Nat → Set i)
+	→ C zero
+	→ (∀ {t} → C t → C (suc t))
+	→ ∀ {t} → PNat t → C t
+recPNat C uₚ vₚ tₚ = indPNat (λ {t} _ → C t) uₚ (λ {t} _ → vₚ t) tₚ
+
+Nat-Prec : ∀ {i C}(Cₚ : Tm ∙ C → Set i)
+	   {u : Tm ∙ C}{v : Tm (∙ ▷ C) (C[p])}{t : Tm ∙ Nat}
+	 → Cₚ u
+	 → (∀ {c} → Cₚ c → Cₚ (v[id, c]))
+	 → PNat t → Cₚ (rec u v t)
+Nat-Prec Cₚ {u}{v} uₚ vₚ tₚ = recPNat (λ t → Cₚ (rec u v t)) uₚ vₚ tₚ
+
+rec : ∀ {Γ C} → Tm Γ C → Tm (Γ ▷ C) (C[p]) → Tm Γ Nat → Tm Γ C
+rec u v zero    = u
+rec u v (suc t) = v[id, rec u v t]
+(rec u v t)[σ] = rec (u[σ]) (v[σ⁺]) (t[σ])
+
+recₚ : ∀ {i Γ C u v t}{Γₚ : Sub ∙ Γ → Set}{Cₚ : ∀ {ν} → Γₚ ν → Tm ∙ (C[ν]) → Set i}
+     → (∀ {ν}(γₚ : Γₚ ν) → Cₚ γₚ (u[ν]))
+     → (∀ {ν}(γcₚ : Σ (Γₚ (p ∘ ν)) (λ γₚ → Cₚ γₚ (q[ν]))) → Cₚ (proj₁ γcₚ) (v[ν]))
+     → (∀ {ν}(γₚ : Γₚ ν) → PNat (t[ν]))
+     → ∀ {ν}(γₚ : Γₚ ν) → Cₚ γₚ (rec (u[ν]) (v[ν⁺]) (t[ν]))
+recₚ {Cₚ = Cₚ} uₚ vₚ tₚ γₚ = Nat-Prec (Cₚ γₚ) (uₚ γₚ) (λ cₚ → vₚ (γₚ, cₚ)) (tₚ γₚ)
+
+-- DTT, dependent eliminator
+
+data PNat : Tm ∙ Nat → Set where
+  Pzero : PNat zero
+  Psuc  : ∀ {t} → PNat t → PNat (suc t)
+
+indPNat : ∀ {i}(P : ∀ {t} → PNat t → Set i)
+	→ P Pzero
+	→ (∀ {t}{tₚ : PNat t} → P tₚ → P (Psuc tₚ))
+	→ ∀ {t}(tₚ : PNat t) → P tₚ
+indPNat P uₚ vₚ Pzero     = uₚ
+indPNat P uₚ vₚ (Psuc tₚ) = vₚ (indPNat P uₚ vₚ tₚ)
+
+Nat-Pind : ∀ {i}{C : Ty (∙ ▷ Nat)}(Cₚ : ∀ {t} → PNat t → Tm ∙ (C[id, t]) → Set i)
+	   {u : Tm ∙ (C[id, zero])}{v : Tm (∙ ▷ Nat ▷ C) (C[p², suc 1])}{t : Tm ∙ Nat}
+	 → Cₚ Pzero u
+	 → (∀ {t}{tₚ : PNat t}{c} → Cₚ tₚ c → Cₚ (Psuc tₚ) (v[id, t, c]))
+	 → (tₚ : PNat t) → Cₚ tₚ (ind C u v t)
+Nat-Pind Cₚ {u}{v} uₚ vₚ tₚ = indPNat (λ {t} tₚ → Cₚ tₚ (ind C u v t)) uₚ vₚ tₚ
+
+ind : ∀ {Γ}(C : Ty (Γ ▷ Nat))
+    → Tm Γ (C[id, zero])
+    → Tm (Γ ▷ Nat ▷ C) (C[p², suc 1])
+    → (t : Tm Γ Nat)
+    → Tm Γ (C[id, t])
+ind C u v zero    = u
+ind C u v (suc t) = v[id, t, ind C u v t]
+(ind C u v t)[σ] = ind (C[σ⁺]) (u[σ]) (v[σ⁺⁺]) (t[σ])
+
+Natₚ : ∀ {ν} → Γₚ ν → Tm ∙ Nat → Set
+Natₚ = λ _ → PNat
+
+zeroₚ : ∀ {Γ}{Γₚ : Sub ∙ Γ → Set}
+      → ∀ {ν} → Γₚ ν → PNat zero
+zeroₚ = λ _ → Pzero
+
+sucₚ : ∀ {Γ t}{Γₚ : Sub ∙ Γ → Set}
+     → (∀ {ν} → Γₚ ν → PNat (t[ν]))
+     → ∀ {ν} → Γₚ ν → PNat (suc (t[ν]))
+sucₚ tₚ = λ γₚ → Psuc (tₚ γₚ)
+
+indₚ : ∀ {i Γ C u v t}{Γₚ : Sub ∙ Γ → Set}
+       {Cₚ : ∀ {ν} → Σ (Γₚ (p ∘ ν)) (λ γₚ → PNat (q[ν])) → Tm ∙ (C[ν]) → Set i}
+     → (∀ {ν}(γₚ : Γₚ ν) → Cₚ (γₚ, Pzero) (u[ν]))
+     → (∀ {ν}(γtcₚ : Σ (Σ (Γₚ (p² ∘ ν)) (λ γₚ → PNat q[p ∘ ν])) (λ γtₚ → Cₚ γtₚ (q[ν])))
+        → Cₚ (proj₁ (proj₁ γtcₚ), Psuc (proj₂ (proj₁ γtcₚ))) (v[ν]))
+     → (tₚ : ∀ {ν}(γₚ : Γₚ ν) → PNat (t[ν]))
+     → ∀ {ν}(γₚ : Γₚ ν) → Cₚ (γₚ, tₚ γₚ) (ind (C[ν⁺]) (u[ν]) (v[ν⁺⁺]) (t[ν]))
+indₚ {Cₚ = Cₚ} uₚ vₚ tₚ {ν} γₚ = Nat-Pind (λ {t} tₚ → Cₚ (γₚ, tₚ))
+  (uₚ γₚ) (λ {t}{tₚ}{c} cₚ → vₚ {ν, t, c} (γₚ, tₚ, cₚ)) (tₚ γₚ)
+
+---------------------------------------------------------------------------------------------
+
+------------------------------------
+-- List
+------------------------------------
+
+List : ∀ {Γ} → Ty Γ → Ty Γ
+(List A)[σ] = List (A[σ])
+nil : ∀ {Γ A} → Tm Γ (List A)
+nil[σ] = nil
+cons : ∀ {Γ A} → Tm Γ A → Tm Γ (List A) → Tm Γ (List A)
+(cons t u)[σ] = cons (t[σ]) (u[σ])
+ind : ∀ {Γ A}(C : Ty (Γ ▷ List A))
+    → Tm Γ (C[id, nil])
+    → Tm (Γ ▷ A ▷ List (A[p]) ▷ C[p², 0]) (C[p³, cons 2 1])
+    → (t : Tm Γ (List A)) → Tm Γ (C[id, t])
+(ind C u v t)[σ] = ind (C[σ⁺]) (u[σ]) (v[σ⁺⁺⁺]) (t[σ])
+ind C u v nil        = u
+ind C u v (cons a t) = v[id, a, t, ind C u v t]
+
+data PList {A}(A
