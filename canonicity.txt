@@ -682,7 +682,7 @@ ind : ∀ {Γ I S P}(C : Ty d (Γ ▷ I ▷ W I S P))
             ▷ Π (I[p³]) (Π (P[p⁺]) (C[p⁵, 1, 2 $ 1 $ 0]))) (C[p³, sup 3 2 1])
     → (i : Tm Γ I)(w : Tm Γ (W I S P[id, i])) → Tm Γ (C[id, i, w])
 (ind C v i w)[σ] = ind (C[σ⁺⁺]) (v[σ⁺⁺⁺⁺]) (i[σ]) (w[σ])
-ind C v .i (sup i s f) = v[id, i, s, f, lam (lam (ind (C[(p²)⁺⁺]) (v[p²]) 1 (f[p²] $ 1 $ 0)))]
+ind C v .i (sup i s f) = v[id, i, s, f, lam (lam (ind (C[(p²)⁺⁺]) (v[(p²)⁺⁺⁺⁺]) 1 (f[p²] $ 1 $ 0)))]
 
 data PW {a b c}{I : Ty a ∙}{S : Ty b (∙ ▷ I)}{P : Ty c (∙ ▷ I ▷ S ▷ I[p²])}
      	(Iₚ : Tm ∙ I → Set a)(Sₚ : ∀ {i} → Iₚ i → Tm ∙ (S[id, i]) → Set b)
@@ -770,7 +770,19 @@ indₚ : ∀ {Γ I S P C v i w}{Γₚ : Sub ∙ Γ → Set x}
      → (wₚ : ∀ {ν}(γₚ : Γₚ ν) → PW (Iₚ γₚ) (λ iₚ → Sₚ (γₚ, iₚ))
                                    (λ iₚ sₚ jₚ → Pₚ (γₚ, iₚ, sₚ, jₚ)) (iₚ γₚ) (w[ν]))
      → (∀ {ν}(γₚ : Γₚ ν) → Cₚ (γₚ, iₚ γₚ, wₚ γₚ) (ind (C[ν⁺⁺]) (v[ν⁺⁺⁺⁺]) (i[ν]) (w[ν])))
-indₚ Cₚ vₚ iₚ wₚ = λ γₚ → ?
+indₚ {C = C}{v} Cₚ vₚ iₚ wₚ = λ {ν} γₚ →
+  indPW {I[ν]}{S[ν⁺]}{P[ν⁺⁺⁺]}{Iₚ γₚ}{λ iₚ → Sₚ (γₚ, iₚ)}{λ iₚ sₚ jₚ → Pₚ (γₚ, iₚ, sₚ, jₚ)}
+        (λ {i}{w} iₚ wₚ → Cₚ (γₚ, iₚ, wₚ) (ind (C[ν⁺⁺]) (v[ν⁺⁺⁺⁺]) i w))
+	(λ iₚ sₚ {fₚ} cₚ → vₚ (γₚ, iₚ, sₚ, λ {j} jₚ {p} pₚ → fₚ {j}{p} jₚ pₚ,
+	                                   λ {j} jₚ {p} pₚ → cₚ {j}{p} jₚ pₚ))
+	(iₚ γₚ) (wₚ γₚ)
+
+Goal: Cₚ (γₚ, iₚ, Psup iₚ sₚ fₚ)
+         (v[ν, i, s, f, lam (lam (ind (C[(ν ∘ p²)⁺⁺]) (v[(ν ∘ p²)⁺⁺⁺⁺]) 1 (f[p²] $ 1 $ 0)))])
+Goal: Cₚ (γₚ, jₚ, fₚ jₚ pₚ) (ind (C[ν⁺⁺]) (v[ν⁺⁺⁺⁺]) j (f $ j $ p))
+
+t $ u $ v = app t[id, u] $ v = app (app t[id, u])[id, v] = app (app t)[(id, u)⁺][id, v] =
+          = app (app t)[id, u, v]
 
 I  : Ty a ∙
 Iₚ : Tyₚ a ∙ₚ I
